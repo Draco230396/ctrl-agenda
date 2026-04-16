@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Parent de Spring Boot para BOM/Plugins -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.spiid</groupId>
+    <artifactId>spiid-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>spiid-parent</name>
+    <description>Parent POM for SPIID microservices</description>
+
+    <!-- Lista de módulos (carpetas con sus poms hijos) -->
+    <modules>
+        <module>spiid-login-service</module>
+    </modules>
+
+    <properties>
+        <!-- Versiones comunes -->
+        <java.version>21</java.version>
+
+        <!-- Librerías compartidas -->
+        <jjwt.version>0.12.6</jjwt.version>
+        <springdoc.version>2.6.0</springdoc.version>
+
+        <!-- Recomendado para consistencia -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
+    </properties>
+
+    <!-- Dependency management central (para que los hijos NO repitan versiones) -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Import BOM de JJWT (opcional pero útil). Si prefieres, deja versiones explícitas en los deps. -->
+            <!-- En tu caso ya usas version property, está ok. -->
+
+            <!-- Puedes agregar más BOMs aquí si luego usas Spring Cloud, etc. -->
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Plugin de Spring Boot (hijos lo usan sin repetir config) -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+
+                <!-- Compiler plugin central -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>

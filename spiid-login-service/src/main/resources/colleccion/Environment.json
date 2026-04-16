@@ -1,0 +1,11 @@
+{
+  "name": "SPIID-IAM (local)",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "enabled": true },
+    { "key": "email", "value": "romeo.test+iam@gmail.com", "enabled": true },
+    { "key": "password", "value": "Test12345!", "enabled": true },
+    { "key": "accessToken", "value": "", "enabled": true },
+    { "key": "refreshToken", "value": "", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment"
+}
