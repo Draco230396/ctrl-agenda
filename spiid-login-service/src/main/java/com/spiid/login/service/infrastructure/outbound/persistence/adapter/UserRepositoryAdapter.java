@@ -11,7 +11,6 @@ import com.spiid.login.service.domain.model.User;
 import com.spiid.login.service.domain.port.out.UserRepositoryPort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Instant;
 import java.util.*;
 
@@ -47,19 +46,24 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   @Override
   @Transactional
   public User save(User user) {
-    UserAccountEntity e = new UserAccountEntity();
+    UserAccountEntity e = users.findById(user.id()).orElse(new UserAccountEntity());    e.setId(user.id());
     e.setTenantId(user.tenantId());
     e.setEmail(user.email());
     e.setPasswordHash(user.passwordHash());
     e.setEnabled(user.enabled());
     e.setCreatedAt(user.createdAt() == null ? Instant.now() : user.createdAt());
+    e.setUpdatedAt(user.updatedAt());
+    e.setProvider(user.provider());
+    e.setProviderId(user.providerId());
+    e.setEnabled(user.enabled());
+
     e.setUpdatedAt(Instant.now());
 
     users.save(e);
 
     // Sin FK cross-service, pero aquí sí tenemos FK al catálogo (role_code).
     // Re-escribimos roles para dejar el estado consistente.
-    userRoles.deleteAllByUserId(e.getTenantId());
+    userRoles.deleteAllByUserId(e.getId());
 
     if (user.roles() != null) {
       Instant now = Instant.now();
@@ -67,7 +71,7 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
         short code = r.code();
         // Validamos que exista en catálogo (si no existe, fallará también por FK en DB)
         catalogRoles.findById(code).orElseThrow(() -> new IllegalArgumentException("Role code inválido: " + code));
-        userRoles.save(new UserRoleEntity(new UserRoleId(e.getTenantId(), code), now));
+        userRoles.save(new UserRoleEntity(new UserRoleId(e.getId(), code), now));
       }
     }
 
@@ -75,23 +79,32 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   }
 
   private User toDomain(UserAccountEntity e) {
-    List<Short> codes = userRoles.findRoleCodesByUserId(e.getTenantId());
+    List<Short> codes = userRoles.findRoleCodesByUserId(e.getId());
     Set<RoleCatalogItem> roles = new LinkedHashSet<>();
     for (Short c : codes) {
       if (c == null) continue;
       catalogRoles.findById(c).ifPresent(cr ->
           roles.add(new RoleCatalogItem(cr.getCode(), cr.getKey(), cr.getDescription()))
       );
+
     }
 
     return new User(
-        e.getTenantId(),
-        e.getEmail(),
-        e.getPasswordHash(),
-        e.isEnabled(),
-        e.getCreatedAt(),
-        e.getUpdatedAt(),
-        roles
+            e.getId(),
+            e.getTenantId(),
+            e.getEmail(),
+            e.getPasswordHash(),
+            e.isEnabled(),
+            e.getCreatedAt(),
+            e.getUpdatedAt(),
+            roles,
+            e.getProvider(),
+            e.getProviderId()
     );
+  }
+  @Override
+  public Optional<User> findByProviderId(String providerId) {
+    return users.findByProviderId(providerId)
+            .map(this::toDomain);
   }
 }

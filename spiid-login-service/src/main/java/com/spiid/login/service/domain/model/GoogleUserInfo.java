@@ -7,5 +7,6 @@ package com.spiid.login.service.domain.model;
  */
 public record GoogleUserInfo(
         String email,
-        String name
+        String name,
+        String sub
 ) {}

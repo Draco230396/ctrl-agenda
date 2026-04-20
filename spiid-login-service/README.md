@@ -118,3 +118,14 @@ curl http://localhost:8080/api/v1/auth/me   -H "Authorization: Bearer <accessTok
 - Password: se hashea con **BCrypt** en la app (no en la DB)
 - Refresh token: se guarda como **hash SHA-256** (`iam.refresh_token.token_hash`) y se puede revocar.
 - En prod: `app.security.jwt.secret` debe ir como variable de entorno y ser largo/aleatorio.
+
+# Flujo correcto 
+AuthService
+↓
+CatalogUseCase
+↓
+RoleCatalogRepositoryPort
+↓
+DB (catalog_role)
+↓
+RoleCatalogItem

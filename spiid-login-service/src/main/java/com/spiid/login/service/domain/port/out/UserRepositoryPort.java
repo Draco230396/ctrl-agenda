@@ -10,4 +10,5 @@ public interface UserRepositoryPort {
     Optional<User> findByEmail(String email);
     Optional<User> findById(UUID id);
     User save(User user);
+    Optional<User> findByProviderId(String providerId);
 }

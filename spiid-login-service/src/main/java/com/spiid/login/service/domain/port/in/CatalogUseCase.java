@@ -7,4 +7,8 @@ import java.util.List;
 public interface CatalogUseCase {
 
     List<RoleCatalogItem> listRoles();
+
+    RoleCatalogItem getRoleByKey(String key);
+
+
 }

@@ -20,4 +20,13 @@ public class CatalogService implements CatalogUseCase {
     public List<RoleCatalogItem> listRoles() {
         return roles.findAllActive();
     }
+
+    @Override
+    public RoleCatalogItem getRoleByKey(String key) {
+
+        String normalizedKey = key.trim().toUpperCase();
+
+        return roles.findByKey(normalizedKey)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + normalizedKey));
+    }
 }

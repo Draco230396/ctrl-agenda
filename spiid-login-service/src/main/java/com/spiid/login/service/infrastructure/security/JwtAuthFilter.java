@@ -35,36 +35,44 @@ public class JwtAuthFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-    if (header != null && header.startsWith("Bearer ")) {
-      String token = header.substring("Bearer ".length()).trim();
-      try {
-        Claims claims = jwt.parseAccessToken(token);
+    try {
 
-        //Despues de leer claims
-        String tenantId = claims.get("tenantId", String.class);
-        TenantContext.set(UUID.fromString(tenantId));
+      if (header != null && header.startsWith("Bearer ")) {
+        String token = header.substring("Bearer ".length()).trim();
 
-        UUID userId = UUID.fromString(claims.getSubject());
+        try {
+          Claims claims = jwt.parseAccessToken(token);
 
-        // roles en el token: lista de strings
-        List<SimpleGrantedAuthority> auths = new ArrayList<>();
-        Object rolesObj = claims.get("roles");
-        if (rolesObj instanceof List<?> list) {
-          for (Object r : list) {
-            if (r != null) auths.add(new SimpleGrantedAuthority("ROLE_" + r.toString()));
+          String tenantId = claims.get("tenantId", String.class);
+          TenantContext.set(UUID.fromString(tenantId));
+
+          UUID userId = UUID.fromString(claims.getSubject());
+
+          List<SimpleGrantedAuthority> auths = new ArrayList<>();
+          Object rolesObj = claims.get("roles");
+
+          if (rolesObj instanceof List<?> list) {
+            for (Object r : list) {
+              if (r != null) {
+                auths.add(new SimpleGrantedAuthority("ROLE_" + r.toString()));
+              }
+            }
           }
+
+          UsernamePasswordAuthenticationToken authentication =
+                  new UsernamePasswordAuthenticationToken(userId, null, auths);
+
+          SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        } catch (JwtException | IllegalArgumentException e) {
+          SecurityContextHolder.clearContext();
         }
-
-        UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(userId, null, auths);
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-      } catch (JwtException | IllegalArgumentException e) {
-        // Token inválido: limpiamos contexto y dejamos que la security chain responda (401 si aplica)
-        SecurityContextHolder.clearContext();
       }
-    }
 
-    filterChain.doFilter(request, response);
+      filterChain.doFilter(request, response);
+
+    } finally {
+      TenantContext.clear();
+    }
   }
 }

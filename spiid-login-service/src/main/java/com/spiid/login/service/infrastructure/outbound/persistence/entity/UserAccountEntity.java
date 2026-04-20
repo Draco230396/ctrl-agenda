@@ -16,14 +16,23 @@ import java.util.UUID;
 public class UserAccountEntity {
 
   @Id
-  @Column(name = "tenant_id", nullable = false)
-  private UUID tenantId;
+  @Column(name = "id", nullable = false)
+  private UUID id;
 
   @Column(name = "email", nullable = false, unique = true, length = 320)
   private String email;
 
-  @Column(name = "password_hash", nullable = false, length = 200)
+  @Column(name = "password_hash", nullable = true, length = 200)
   private String passwordHash;
+
+  @Column(name = "tenant_id")
+  private UUID tenantId;
+
+  @Column(name = "provider")
+  private String provider;
+
+  @Column(name = "provider_id")
+  private String providerId;
 
   @Column(name = "enabled", nullable = false)
   private boolean enabled;

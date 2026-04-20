@@ -10,11 +10,14 @@ import java.util.UUID;
  * hexagonal
  * */
 public record User(
+        UUID id,
         UUID tenantId,
         String email,
         String passwordHash,
         boolean enabled,
         Instant createdAt,
         Instant updatedAt,
-        Set<RoleCatalogItem> roles
+        Set<RoleCatalogItem> roles,
+        String provider,
+        String providerId
 ) {}

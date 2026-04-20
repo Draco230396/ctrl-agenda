@@ -1,6 +1,8 @@
 package com.spiid.login.service.infrastructure.security;
 
+import com.spiid.login.service.application.dto.AuthResultDto;
 import com.spiid.login.service.domain.model.User;
+import com.spiid.login.service.domain.port.in.AuthUseCase;
 import com.spiid.login.service.infrastructure.config.JwtProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -37,7 +39,7 @@ public class JwtTokenService {
 
     return Jwts.builder()
         .issuer(props.issuer())
-        .subject(user.tenantId().toString())
+        .subject(user.id().toString())
         .claim("typ", "access")
         .claim("roles", roleKeys)
         .claim("tenantId", user.tenantId().toString())
@@ -53,7 +55,7 @@ public class JwtTokenService {
 
     return Jwts.builder()
         .issuer(props.issuer())
-        .subject(user.tenantId().toString())
+        .subject(user.id().toString())
         .claim("typ", "refresh")
         .claim("tenantId", user.tenantId().toString())
         .issuedAt(Date.from(now))
@@ -91,14 +93,4 @@ public class JwtTokenService {
     return c;
   }
 
-  public String generateToken(User user) {
-    return Jwts.builder()
-            .setSubject(user.email())
-            .claim("roles", user.roles())
-            .claim("tenantId", user.tenantId())
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + 1200))
-            .signWith(key)
-            .compact();
-  }
 }

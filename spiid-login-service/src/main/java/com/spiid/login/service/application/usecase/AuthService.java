@@ -40,50 +40,67 @@ public class AuthService implements AuthUseCase {
     private final GoogleTokenVerifierPort googleTokenVerifierPort;
     private final UserRepositoryPort userRepositoryPort;
 
-    private final CatalogService catalogUseCase;
-
+    private final CatalogUseCase catalogUseCase;
 
     @Override
     @Transactional
     public AuthResultDto register(String email, String password, List<Short> roleCodes, String userAgent, String ipAddress) {
+
+        // Normalizar email
         String normalizedEmail = normalizeEmail(email);
 
+        // Validar duplicado
         users.findByEmail(normalizedEmail).ifPresent(u -> {
             throw new IllegalArgumentException("Email ya registrado: " + normalizedEmail);
         });
 
-        // Validación de roleCodes -> catálogo (para poder mostrar key/description)
-        List<Short> codes = (roleCodes == null || roleCodes.isEmpty())
-                ? List.of((short) 1)  // 1 = PASSENGER (seed)
-                : roleCodes;
-
-        Set<RoleCatalogItem> roles = new LinkedHashSet<>();
-        for (Short code : codes) {
-            if (code == null) continue;
-            RoleCatalogItem role = roleCatalog.findByCode(code)
-                    .orElseThrow(() -> new IllegalArgumentException("Role code inválido: " + code));
-            roles.add(role);
+        // Validar password básica
+        if (password == null || password.length() < 6) {
+            throw new IllegalArgumentException("Password muy corto");
         }
 
         Instant now = Instant.now();
+
+        //1. Crear tenant (registro = nuevo negocio)
+        UUID tenantId = UUID.randomUUID();
+
+        //2. Obtener rol desde catálogo (NO hardcode)
+        RoleCatalogItem roleItem = catalogUseCase.getRoleByKey("OWNER");
+
+        //3. Asignar roles
+        Set<RoleCatalogItem> roles = Set.of(roleItem);
+
+        //4. Crear usuario correctamente (modelo SaaS)
         User user = new User(
-                UUID.randomUUID(),
+                UUID.randomUUID(),                 // userId
+                tenantId,                          // tenantId
                 normalizedEmail,
-                passwordEncoder.encode(password),
+                passwordEncoder.encode(password), // password hash
                 true,
                 now,
                 now,
-                roles
+                roles,
+                "LOCAL",                          // provider
+                null                              // providerId
         );
 
+        // Guardar usuario
         User saved = users.save(user);
 
+        // Generar tokens
         String access = jwtTokenService.createAccessToken(saved);
         String refresh = jwtTokenService.createRefreshToken(saved);
 
-        // Guardamos hash del refresh token (no el token en claro)
+        // IMPORTANTE: usar user.id(), NO tenantId
         String refreshHash = TokenHashing.sha256Hex(refresh);
-        refreshStore.store(saved.tenantId(),refreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
+
+        refreshStore.store(
+                saved.id(), // correcto
+                refreshHash,
+                now.plusSeconds(jwtProps.refreshTtlSeconds()),
+                userAgent,
+                ipAddress
+        );
 
         return new AuthResultDto(access, refresh, toUserView(saved));
     }
@@ -95,7 +112,10 @@ public class AuthService implements AuthUseCase {
 
         User user = users.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
-
+        // evitar login password para usuarios Google
+        if ("GOOGLE".equals(user.provider())) {
+            throw new IllegalArgumentException("Use Google login");
+        }
         if (!user.enabled()) {
             throw new IllegalArgumentException("Usuario deshabilitado");
         }
@@ -110,7 +130,7 @@ public class AuthService implements AuthUseCase {
         String refresh = jwtTokenService.createRefreshToken(user);
 
         String refreshHash = TokenHashing.sha256Hex(refresh);
-        refreshStore.store(user.tenantId(), refreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
+        refreshStore.store(user.id(), refreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
 
         return new AuthResultDto(access, refresh, toUserView(user));
     }
@@ -147,7 +167,7 @@ public class AuthService implements AuthUseCase {
         String newRefresh = jwtTokenService.createRefreshToken(user);
 
         String newRefreshHash = TokenHashing.sha256Hex(newRefresh);
-        refreshStore.store(user.tenantId(), newRefreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
+        refreshStore.store(user.id(), newRefreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
 
         return new AuthResultDto(access, newRefresh, toUserView(user));
     }
@@ -176,45 +196,105 @@ public class AuthService implements AuthUseCase {
     }
 
     @Override
-    public String loginWithGoogle(String idToken, String role, String tenantIdInput) {
+    public AuthResultDto loginWithGoogle(String idToken, String role, String tenantIdInput) {
 
+        // 1. VALIDAR TOKEN GOOGLE
         var googleUser = googleTokenVerifierPort.verify(idToken);
 
-        var email = new Email(googleUser.email());
+        // 2. BUSCAR USUARIO POR PROVIDER ID (GOOGLE)
+        var userOpt = users.findByProviderId(googleUser.sub());
 
-        var userOpt = userRepositoryPort.findByEmail(email.toString());
+        // 3. SI NO EXISTE, VALIDAR QUE EL EMAIL NO ESTÉ REGISTRADO CON OTRO MÉTODO
+        if (userOpt.isEmpty()) {
+            users.findByEmail(googleUser.email())
+                    .ifPresent(u -> {
+                        throw new RuntimeException("Email already registered with another method");
+                    });
+        }
 
         User user;
 
         if (userOpt.isPresent()) {
+            // =========================
+            // LOGIN
+            // =========================
             user = userOpt.get();
 
-        } else {
+            if (!user.enabled()) {
+                throw new RuntimeException("Usuario deshabilitado");
+            }
 
+        } else {
+            // =========================
+            // REGISTRO
+            // =========================
+
+            // NORMALIZAR ROLE
+            String normalizedRole = role.toUpperCase();
+
+            // OBTENER ROLE DESDE CATÁLOGO (valida automáticamente)
+            RoleCatalogItem roleItem = catalogUseCase.getRoleByKey(normalizedRole);
+
+            // DEFINIR TENANT
             UUID tenantId;
 
-            if ("OWNER".equalsIgnoreCase(role)) {
+            if ("OWNER".equals(normalizedRole)) {
+                // OWNER crea su propio tenant
                 tenantId = UUID.randomUUID();
             } else {
+                if (tenantIdInput == null) {
+                    throw new RuntimeException("tenantId required for role: " + normalizedRole);
+                }
+
                 tenantId = UUID.fromString(tenantIdInput);
             }
 
-            RoleCatalogItem roleItem = catalogUseCase.listRoles().getFirst();
-
+            // CREAR USUARIO
             user = new User(
+                    UUID.randomUUID(),
                     tenantId,
-                    email.toString(),
-                    null,
+                    googleUser.email(),
+                    null, // sin password (Google)
                     true,
                     Instant.now(),
                     Instant.now(),
-                    Set.of(roleItem)
+                    Set.of(roleItem),
+                    "GOOGLE",
+                    googleUser.sub()
             );
 
-            userRepositoryPort.save(user);
+            // GUARDAR
+            user = users.save(user); // importante reasignar
         }
 
-        return jwtTokenService.generateToken(user);
+        // =========================
+        // GENERACIÓN DE TOKENS (CORRECTO)
+        // =========================
+        Instant now = Instant.now();
+
+        String access = jwtTokenService.createAccessToken(user);
+        String refresh = jwtTokenService.createRefreshToken(user);
+
+        // HASH DEL REFRESH
+        String refreshHash = TokenHashing.sha256Hex(refresh);
+
+        // GUARDAR REFRESH TOKEN
+        refreshStore.store(
+                user.id(),
+                refreshHash,
+                now.plusSeconds(jwtProps.refreshTtlSeconds()),
+                null,
+                null
+        );
+
+        // =========================
+        // RESPONSE FINAL CORRECTO
+        // =========================
+        return new AuthResultDto(
+                access,
+                refresh,
+                toUserView(user)
+        );
     }
 
 

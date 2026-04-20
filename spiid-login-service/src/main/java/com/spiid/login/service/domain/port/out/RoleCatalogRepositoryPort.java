@@ -10,4 +10,6 @@ public interface RoleCatalogRepositoryPort {
     Optional<RoleCatalogItem> findByCode(short code);
     List<RoleCatalogItem> findAllActive();
 
+    Optional<RoleCatalogItem> findByKey(String key);
+
 }

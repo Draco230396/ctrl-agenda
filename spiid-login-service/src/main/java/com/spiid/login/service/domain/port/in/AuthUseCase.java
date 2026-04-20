@@ -132,6 +132,6 @@ public interface AuthUseCase {
      * @param idToken
      * @return
      */
-    String loginWithGoogle(String idToken, String role, String tenantId);
+    AuthResultDto loginWithGoogle(String idToken, String role, String tenantId);
 
 }

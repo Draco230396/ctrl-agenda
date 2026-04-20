@@ -3,7 +3,6 @@ package com.spiid.login.service.infrastructure.inbound.rest.controller;
 import com.spiid.login.service.domain.port.in.AuthUseCase;
 import com.spiid.login.service.infrastructure.inbound.rest.dto.AuthDtos;
 import com.spiid.login.service.infrastructure.inbound.rest.request.GoogleLoginRequest;
-import com.spiid.login.service.infrastructure.inbound.rest.response.AuthResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -87,15 +86,16 @@ public class AuthController {
   }
 
   @PostMapping("/google")
-  public ResponseEntity<AuthResponse> loginWithGoogle(
-          @RequestBody GoogleLoginRequest request
+  public ResponseEntity<AuthDtos.AuthResponse> loginWithGoogle(
+          @Valid @RequestBody GoogleLoginRequest request
   ) {
-    String token = authUseCase.loginWithGoogle(
+
+    var res = auth.loginWithGoogle(
             request.idToken(),
             request.role(),
             request.tenantId()
     );
 
-    return ResponseEntity.ok(new AuthResponse(token));
+    return ResponseEntity.ok(toResponse(res));
   }
 }

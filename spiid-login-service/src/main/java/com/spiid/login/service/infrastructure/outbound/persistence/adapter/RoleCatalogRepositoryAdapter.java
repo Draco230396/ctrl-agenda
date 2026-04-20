@@ -29,4 +29,17 @@ public class RoleCatalogRepositoryAdapter implements RoleCatalogRepositoryPort {
         .map(e -> new RoleCatalogItem(e.getCode(), e.getKey(), e.getDescription()))
         .toList();
   }
+
+  @Override
+  public Optional<RoleCatalogItem> findByKey(String key) {
+
+    String normalizedKey = key.trim().toUpperCase();
+
+    return repo.findByKey(normalizedKey)
+            .map(e -> new RoleCatalogItem(
+                    e.getCode(),
+                    e.getKey(),
+                    e.getDescription()
+            ));
+  }
 }
