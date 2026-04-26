@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: spiid-login-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/spiid-saas
+    username: postgres
+    password: xxxxxxxx
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update   # Validamos contra tablas ya creadas (no generar DDL desde Hibernate)
+    properties:
+      hibernate:
+        default_schema: login
+        jdbc:
+          time_zone: UTC
+        autodetection: none
+    open-in-view: false
+
+  # Flyway queda habilitado para que puedas migrar por script en el futuro.
+  # Si ya creaste las tablas manualmente, puedes:
+  #  - dejarlo enabled=false
+  #  - o crear un baseline.
+  flyway:
+    enabled: false
+    default-schema: login
+    schemas: login
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+app:
+  messaging:
+    kafka:
+      enabled: false
+
+  security:
+    jwt:
+      issuer: "spiid"
+      # IMPORTANTE: en prod esto debe ir como variable de entorno, no hardcodeado.
+      secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_CHANGE_ME_1234567890"
+      access-ttl-seconds: 900
+      refresh-ttl-seconds: 2592000
+google:
+  client-id: TU_CLIENT_ID_REAL
