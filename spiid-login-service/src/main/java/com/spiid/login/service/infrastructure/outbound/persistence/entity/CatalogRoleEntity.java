@@ -16,6 +16,9 @@ import java.time.Instant;
 @Table(name = "catalog_role", schema = "login")
 public class CatalogRoleEntity {
 
+  public CatalogRoleEntity(){
+
+  }
   @Id
   @Column(name = "code", nullable = false)
   private short code;

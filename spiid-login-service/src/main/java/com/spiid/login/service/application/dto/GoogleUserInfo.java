@@ -1,4 +1,4 @@
-package com.spiid.login.service.domain.model;
+package com.spiid.login.service.application.dto;
 
 /**
  * Se crea modelo de respuesta -> Dominio

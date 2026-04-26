@@ -1,8 +1,8 @@
 package com.spiid.login.service.infrastructure.inbound.rest.controller;
 
+import com.spiid.login.service.application.dto.*;
+import com.spiid.login.service.application.usecase.AuthService;
 import com.spiid.login.service.domain.port.in.AuthUseCase;
-import com.spiid.login.service.infrastructure.inbound.rest.dto.AuthDtos;
-import com.spiid.login.service.infrastructure.inbound.rest.request.GoogleLoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -26,48 +26,48 @@ import java.util.UUID;
 @RequestMapping(value = "/api/v1/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthController {
 
-  private final AuthUseCase auth;
+  private final AuthService auth;
 
-  public AuthController(AuthUseCase auth) {
+  public AuthController(AuthService auth) {
     this.auth = auth;
   }
 
   @PostMapping("/register")
-  public AuthDtos.AuthResponse register(@Valid @RequestBody AuthDtos.RegisterRequest req, HttpServletRequest http) {
+  public AuthResponse register(@Valid @RequestBody RegisterRequest req, HttpServletRequest http) {
     var res = auth.register(req.email(), req.password(), req.roleCodes(), userAgent(http), clientIp(http));
     return toResponse(res);
   }
 
   @PostMapping("/login")
-  public AuthDtos.AuthResponse login(@Valid @RequestBody AuthDtos.LoginRequest req, HttpServletRequest http) {
+  public AuthResponse login(@Valid @RequestBody LoginRequest req, HttpServletRequest http) {
     var res = auth.login(req.email(), req.password(), userAgent(http), clientIp(http));
     return toResponse(res);
   }
 
   @PostMapping("/refresh")
-  public AuthDtos.AuthResponse refresh(@Valid @RequestBody AuthDtos.RefreshRequest req, HttpServletRequest http) {
+  public AuthResponse refresh(@Valid @RequestBody RefreshRequest req, HttpServletRequest http) {
     var res = auth.refresh(req.refreshToken(), userAgent(http), clientIp(http));
     return toResponse(res);
   }
 
   @GetMapping("/me")
-  public AuthDtos.UserView me(Authentication authentication) {
+  public UserView me(Authentication authentication) {
     // JwtAuthFilter pone el principal como UUID
     UUID userId = (UUID) authentication.getPrincipal();
     var user = auth.me(userId);
-    return new AuthDtos.UserView(
+    return new UserView(
         user.id().toString(),
         user.email(),
         user.enabled(),
-        user.roles().stream().map(r -> new AuthDtos.RoleView(r.code(), r.key(), r.description())).toList()
+        user.roles().stream().map(r -> new RoleView(r.code(), r.key(), r.description())).toList()
     );
   }
 
-  private static AuthDtos.AuthResponse toResponse(AuthUseCase.AuthResultDto res) {
+  private static AuthResponse toResponse(AuthResultDto res) {
     var u = res.user();
-    List<AuthDtos.RoleView> roles = u.roles().stream().map(r -> new AuthDtos.RoleView(r.code(), r.key(), r.description())).toList();
-    var uv = new AuthDtos.UserView(u.id().toString(), u.email(), u.enabled(), roles);
-    return new AuthDtos.AuthResponse(res.accessToken(), res.refreshToken(), uv);
+    List<RoleView> roles = u.roles().stream().map(r -> new RoleView(r.code(), r.key(), r.description())).toList();
+    var uv = new UserView(u.id().toString(), u.email(), u.enabled(), roles);
+    return new AuthResponse(res.accessToken(), res.refreshToken(), uv);
   }
 
   private static String userAgent(HttpServletRequest req) {
@@ -86,7 +86,7 @@ public class AuthController {
   }
 
   @PostMapping("/google")
-  public ResponseEntity<AuthDtos.AuthResponse> loginWithGoogle(
+  public ResponseEntity<AuthResponse> loginWithGoogle(
           @Valid @RequestBody GoogleLoginRequest request
   ) {
 

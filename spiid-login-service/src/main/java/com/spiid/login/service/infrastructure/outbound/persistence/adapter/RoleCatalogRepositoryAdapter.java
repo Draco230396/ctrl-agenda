@@ -1,6 +1,6 @@
 package com.spiid.login.service.infrastructure.outbound.persistence.adapter;
 
-import com.spiid.login.service.domain.model.RoleCatalogItem;
+import com.spiid.login.service.application.dto.RoleCatalogItem;
 import com.spiid.login.service.domain.port.out.RoleCatalogRepositoryPort;
 import com.spiid.login.service.infrastructure.outbound.persistence.repository.CatalogRoleJpaRepository;
 import org.springframework.stereotype.Component;

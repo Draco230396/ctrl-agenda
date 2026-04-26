@@ -1,5 +1,6 @@
 package com.spiid.login.service.infrastructure.outbound.persistence.adapter;
 
+import com.spiid.login.service.application.dto.TokenRecord;
 import com.spiid.login.service.infrastructure.outbound.persistence.entity.RefreshTokenEntity;
 import com.spiid.login.service.domain.port.out.RefreshTokenStorePort;
 import com.spiid.login.service.infrastructure.outbound.persistence.repository.RefreshTokenJpaRepository;

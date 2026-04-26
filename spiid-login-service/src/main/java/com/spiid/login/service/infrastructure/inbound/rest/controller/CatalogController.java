@@ -1,7 +1,7 @@
 package com.spiid.login.service.infrastructure.inbound.rest.controller;
 
+import com.spiid.login.service.application.dto.RoleView;
 import com.spiid.login.service.domain.port.in.CatalogUseCase;
-import com.spiid.login.service.infrastructure.inbound.rest.dto.AuthDtos;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,10 +24,10 @@ public class CatalogController {
   }
 
   @GetMapping("/roles")
-  public List<AuthDtos.RoleView> roles() {
+  public List<RoleView> roles() {
     return catalog.listRoles()
         .stream()
-        .map(r -> new AuthDtos.RoleView(r.code(), r.key(), r.description()))
+        .map(r -> new RoleView(r.code(), r.key(), r.description()))
         .toList();
   }
 }

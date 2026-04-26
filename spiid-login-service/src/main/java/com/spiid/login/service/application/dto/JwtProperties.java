@@ -1,4 +1,4 @@
-package com.spiid.login.service.infrastructure.config;
+package com.spiid.login.service.application.dto;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 /**

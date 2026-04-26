@@ -1,4 +1,4 @@
-package com.spiid.login.service.domain.model;
+package com.spiid.login.service.application.dto;
 
 import java.time.Instant;
 import java.util.Set;

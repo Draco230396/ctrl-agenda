@@ -1,6 +1,6 @@
 package com.spiid.login.service.application.usecase;
 
-import com.spiid.login.service.domain.model.RoleCatalogItem;
+import com.spiid.login.service.application.dto.RoleCatalogItem;
 import com.spiid.login.service.domain.port.in.CatalogUseCase;
 import com.spiid.login.service.domain.port.out.RoleCatalogRepositoryPort;
 import org.springframework.stereotype.Service;

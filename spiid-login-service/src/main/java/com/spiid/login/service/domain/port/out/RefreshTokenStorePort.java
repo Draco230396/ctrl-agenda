@@ -1,5 +1,7 @@
 package com.spiid.login.service.domain.port.out;
 
+import com.spiid.login.service.application.dto.TokenRecord;
+
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,7 +16,4 @@ public interface RefreshTokenStorePort {
             String ipAddress);
     Optional<TokenRecord> read(String refreshTokenHash);
     void revoke(String refreshTokenHash);
-    record TokenRecord(UUID userId,
-                       Instant expiresAt,
-                       Instant revokedAt){}
 }

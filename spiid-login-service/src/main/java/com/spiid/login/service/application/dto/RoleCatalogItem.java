@@ -1,4 +1,4 @@
-package com.spiid.login.service.domain.model;
+package com.spiid.login.service.application.dto;
 
 /**
  * Representa el rol proviniente del catalogo (iam.catalog_role)

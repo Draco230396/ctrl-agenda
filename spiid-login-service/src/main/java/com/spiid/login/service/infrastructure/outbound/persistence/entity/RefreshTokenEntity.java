@@ -1,7 +1,6 @@
 package com.spiid.login.service.infrastructure.outbound.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.Generated;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -16,7 +15,11 @@ import java.util.UUID;
 @Setter
 public class RefreshTokenEntity {
 
+  public RefreshTokenEntity(){
+
+  }
   @Id
+  @GeneratedValue
   @Column(name = "id", nullable = false)
   private UUID id;
 

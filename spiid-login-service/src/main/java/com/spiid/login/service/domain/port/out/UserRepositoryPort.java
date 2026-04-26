@@ -1,6 +1,6 @@
 package com.spiid.login.service.domain.port.out;
 
-import com.spiid.login.service.domain.model.User;
+import com.spiid.login.service.application.dto.User;
 
 import java.util.Optional;
 import java.util.UUID;

@@ -1,6 +1,6 @@
 package com.spiid.login.service.domain.port.out;
 
-import com.spiid.login.service.domain.model.RoleCatalogItem;
+import com.spiid.login.service.application.dto.RoleCatalogItem;
 
 import java.util.List;
 import java.util.Optional;

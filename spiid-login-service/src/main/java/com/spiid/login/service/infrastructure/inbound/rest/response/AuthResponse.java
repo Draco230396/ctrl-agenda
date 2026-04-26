@@ -26,7 +26,7 @@ public class AuthResponse {
         return user;
     }
 
-    // 🔹 DTO interno para usuario
+    //DTO interno para usuario
     public static class UserView {
         private String id;
         private String email;
@@ -46,7 +46,7 @@ public class AuthResponse {
         public List<RoleView> getRoles() { return roles; }
     }
 
-    // 🔹 DTO interno para roles
+    //DTO interno para roles
     public static class RoleView {
         private short code;
         private String key;

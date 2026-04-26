@@ -1,11 +1,17 @@
 {
-  "name": "SPIID-IAM (local)",
+  "name": "SPIID-LOGIN (local)",
   "values": [
     { "key": "baseUrl", "value": "http://localhost:8080", "enabled": true },
+
     { "key": "email", "value": "romeo.test+iam@gmail.com", "enabled": true },
     { "key": "password", "value": "Test12345!", "enabled": true },
+
+    { "key": "googleIdToken", "value": "", "enabled": true },
+
     { "key": "accessToken", "value": "", "enabled": true },
-    { "key": "refreshToken", "value": "", "enabled": true }
-  ],
-  "_postman_variable_scope": "environment"
+    { "key": "refreshToken", "value": "", "enabled": true },
+
+    { "key": "tenantId", "value": "", "enabled": true },
+    { "key": "userId", "value": "", "enabled": true }
+  ]
 }

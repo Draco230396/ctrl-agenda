@@ -15,7 +15,11 @@ import java.util.UUID;
 @Table(name = "user_account", schema = "login")
 public class UserAccountEntity {
 
+  public UserAccountEntity(){
+
+  }
   @Id
+  @GeneratedValue
   @Column(name = "id", nullable = false)
   private UUID id;
 

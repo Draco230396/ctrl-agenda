@@ -1,4 +1,4 @@
-package com.spiid.login.service.infrastructure.inbound.rest.request;
+package com.spiid.login.service.application.dto;
 
 public record GoogleLoginRequest(
         String idToken,

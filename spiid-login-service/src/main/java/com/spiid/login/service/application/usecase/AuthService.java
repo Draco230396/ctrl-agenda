@@ -1,22 +1,18 @@
 package com.spiid.login.service.application.usecase;
 
-import com.spiid.login.service.domain.model.RoleCatalogItem;
-import com.spiid.login.service.domain.model.User;
+import com.spiid.login.service.application.dto.*;
 import com.spiid.login.service.domain.port.in.AuthUseCase;
-import com.spiid.login.service.domain.port.in.CatalogUseCase;
 import com.spiid.login.service.domain.port.out.GoogleTokenVerifierPort;
-import com.spiid.login.service.domain.port.out.RefreshTokenStorePort;
-import com.spiid.login.service.domain.port.out.RoleCatalogRepositoryPort;
-import com.spiid.login.service.domain.port.out.UserRepositoryPort;
-import com.spiid.login.service.domain.valueobject.Email;
+import com.spiid.login.service.infrastructure.outbound.persistence.adapter.RefreshTokenStoreAdapter;
+import com.spiid.login.service.infrastructure.outbound.persistence.adapter.RoleCatalogRepositoryAdapter;
+import com.spiid.login.service.infrastructure.outbound.persistence.adapter.UserRepositoryAdapter;
 import com.spiid.login.service.infrastructure.security.JwtTokenService;
 import com.spiid.login.service.infrastructure.security.TokenHashing;
-import com.spiid.login.service.infrastructure.config.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.spiid.login.service.domain.valueobject.RoleCode;
+
 import java.time.Instant;
 import java.util.*;
 
@@ -29,18 +25,17 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthService implements AuthUseCase {
 
-    private final UserRepositoryPort users;
-    private final RoleCatalogRepositoryPort roleCatalog;
-    private final RefreshTokenStorePort refreshStore;
+    private final UserRepositoryAdapter users;
+    private final RoleCatalogRepositoryAdapter roleCatalog;
+    private final RefreshTokenStoreAdapter refreshStore;
     private final PasswordEncoder passwordEncoder;
 
     private final JwtTokenService jwtTokenService;
     private final JwtProperties jwtProps;
 
     private final GoogleTokenVerifierPort googleTokenVerifierPort;
-    private final UserRepositoryPort userRepositoryPort;
 
-    private final CatalogUseCase catalogUseCase;
+    private final CatalogService catalogService;
 
     @Override
     @Transactional
@@ -65,7 +60,7 @@ public class AuthService implements AuthUseCase {
         UUID tenantId = UUID.randomUUID();
 
         //2. Obtener rol desde catálogo (NO hardcode)
-        RoleCatalogItem roleItem = catalogUseCase.getRoleByKey("OWNER");
+        RoleCatalogItem roleItem = catalogService.getRoleByKey("OWNER");
 
         //3. Asignar roles
         Set<RoleCatalogItem> roles = Set.of(roleItem);
@@ -233,7 +228,7 @@ public class AuthService implements AuthUseCase {
             String normalizedRole = role.toUpperCase();
 
             // OBTENER ROLE DESDE CATÁLOGO (valida automáticamente)
-            RoleCatalogItem roleItem = catalogUseCase.getRoleByKey(normalizedRole);
+            RoleCatalogItem roleItem = catalogService.getRoleByKey(normalizedRole);
 
             // DEFINIR TENANT
             UUID tenantId;

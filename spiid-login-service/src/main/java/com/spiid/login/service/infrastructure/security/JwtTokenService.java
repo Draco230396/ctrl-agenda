@@ -1,9 +1,7 @@
 package com.spiid.login.service.infrastructure.security;
 
-import com.spiid.login.service.application.dto.AuthResultDto;
-import com.spiid.login.service.domain.model.User;
-import com.spiid.login.service.domain.port.in.AuthUseCase;
-import com.spiid.login.service.infrastructure.config.JwtProperties;
+import com.spiid.login.service.application.dto.JwtProperties;
+import com.spiid.login.service.application.dto.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;

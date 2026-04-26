@@ -1,7 +1,8 @@
 package com.spiid.login.service.domain.port.in;
 
 
-import com.spiid.login.service.domain.model.RoleCatalogItem;
+import com.spiid.login.service.application.dto.AuthResultDto;
+import com.spiid.login.service.application.dto.UserViewDto;
 
 import java.util.List;
 import java.util.UUID;
@@ -98,34 +99,6 @@ public interface AuthUseCase {
      */
     UserViewDto me(UUID userId);
 
-    /**
-     * Resultado estándar de autenticación.
-     *
-     * Se reutiliza en:
-     * - register
-     * - login
-     * - refresh
-     *
-     * Agrupa los tokens y la información del usuario.
-     */
-    record AuthResultDto(
-            String accessToken,
-            String refreshToken,
-            UserViewDto user
-    ) {}
-
-    /**
-     * Vista de usuario expuesta al cliente.
-     *
-     * No debe contener información sensible
-     * como contraseñas, hashes, etc.
-     */
-    record UserViewDto(
-            UUID id,
-            String email,
-            boolean enabled,
-            List<RoleCatalogItem> roles
-    ) {}
 
     /**
      *  Se modifica el puerto de entrada, se agrega

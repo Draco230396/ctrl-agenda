@@ -17,27 +17,29 @@
   <description>spiid-login-service - SPIID microservice</description>
 
   <dependencies>
-    <!-- Web + Validation -->
+
+    <!-- Spring Core -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
-    <!-- Security -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
 
-    <!-- Data access -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
+
+    <!-- DB -->
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
@@ -57,7 +59,7 @@
       <version>${springdoc.version}</version>
     </dependency>
 
-    <!-- JWT (JJWT) -->
+    <!-- JWT -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>
@@ -76,10 +78,17 @@
       <scope>runtime</scope>
     </dependency>
 
-    <!-- Kafka -->
+    <!-- Google -->
     <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
+      <groupId>com.google.api-client</groupId>
+      <artifactId>google-api-client</artifactId>
+      <version>2.9.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client-jackson2</artifactId>
+      <version>2.1.0</version>
     </dependency>
 
     <!-- Lombok -->
@@ -95,27 +104,11 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-core</artifactId>
-      <version>5.6.15.Final</version>
-    </dependency>
 
-    <!--Depencia de google -->
-    <!-- Source: https://mvnrepository.com/artifact/com.google.api-client/google-api-client -->
     <dependency>
-      <groupId>com.google.api-client</groupId>
-      <artifactId>google-api-client</artifactId>
-      <version>2.9.0</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <!-- Source: https://mvnrepository.com/artifact/com.google.http-client/google-http-client-jackson2 -->
-    <dependency>
-      <groupId>com.google.http-client</groupId>
-      <artifactId>google-http-client-jackson2</artifactId>
-      <version>2.1.0</version>
-      <scope>compile</scope>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>
@@ -127,14 +120,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-              <source>16</source>
-              <target>16</target>
-          </configuration>
-      </plugin>
+
     </plugins>
   </build>
 
