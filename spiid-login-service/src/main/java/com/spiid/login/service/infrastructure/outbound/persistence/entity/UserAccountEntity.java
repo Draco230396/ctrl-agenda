@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -47,5 +48,6 @@ public class UserAccountEntity {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-
+  @OneToMany(mappedBy = "user")
+  private Set<UserRoleEntity> roles;
 }

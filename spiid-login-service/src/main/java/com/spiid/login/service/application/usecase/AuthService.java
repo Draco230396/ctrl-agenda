@@ -2,12 +2,11 @@ package com.spiid.login.service.application.usecase;
 
 import com.spiid.login.service.application.dto.*;
 import com.spiid.login.service.domain.port.in.AuthUseCase;
-import com.spiid.login.service.domain.port.out.GoogleTokenVerifierPort;
-import com.spiid.login.service.infrastructure.outbound.persistence.adapter.RefreshTokenStoreAdapter;
-import com.spiid.login.service.infrastructure.outbound.persistence.adapter.RoleCatalogRepositoryAdapter;
-import com.spiid.login.service.infrastructure.outbound.persistence.adapter.UserRepositoryAdapter;
+import com.spiid.login.service.domain.port.out.*;
 import com.spiid.login.service.infrastructure.security.JwtTokenService;
 import com.spiid.login.service.infrastructure.security.TokenHashing;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,9 +24,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthService implements AuthUseCase {
 
-    private final UserRepositoryAdapter users;
-    private final RoleCatalogRepositoryAdapter roleCatalog;
-    private final RefreshTokenStoreAdapter refreshStore;
+    private final UserRepositoryPort users;
+    private final RefreshTokenStorePort refreshStore;
     private final PasswordEncoder passwordEncoder;
 
     private final JwtTokenService jwtTokenService;
@@ -36,7 +34,9 @@ public class AuthService implements AuthUseCase {
     private final GoogleTokenVerifierPort googleTokenVerifierPort;
 
     private final CatalogService catalogService;
-
+    private final TenantRepositoryPort tenantRepositoryAdapter;
+    @PersistenceContext
+    private EntityManager entityManager;
     @Override
     @Transactional
     public AuthResultDto register(String email, String password, List<Short> roleCodes, String userAgent, String ipAddress) {
@@ -57,7 +57,11 @@ public class AuthService implements AuthUseCase {
         Instant now = Instant.now();
 
         //1. Crear tenant (registro = nuevo negocio)
-        UUID tenantId = UUID.randomUUID();
+        String tenantName = normalizedEmail.split("@")[0] + "-tenant";
+
+        Tenant tenant = tenantRepositoryAdapter.save(
+                new Tenant(UUID.randomUUID(), tenantName, true)
+        );
 
         //2. Obtener rol desde catálogo (NO hardcode)
         RoleCatalogItem roleItem = catalogService.getRoleByKey("OWNER");
@@ -67,8 +71,8 @@ public class AuthService implements AuthUseCase {
 
         //4. Crear usuario correctamente (modelo SaaS)
         User user = new User(
-                UUID.randomUUID(),                 // userId
-                tenantId,                          // tenantId
+                null,                 // userId
+                tenant.id(),                          // tenantId
                 normalizedEmail,
                 passwordEncoder.encode(password), // password hash
                 true,
@@ -79,18 +83,21 @@ public class AuthService implements AuthUseCase {
                 null                              // providerId
         );
 
-        // Guardar usuario
         User saved = users.save(user);
+        // Se Fuerza persistencia del user antes del refresh
+        entityManager.flush();
 
+        //Se usa el ID del entity persistido
+        UUID userId = saved.id();
         // Generar tokens
         String access = jwtTokenService.createAccessToken(saved);
         String refresh = jwtTokenService.createRefreshToken(saved);
-
-        // IMPORTANTE: usar user.id(), NO tenantId
+        System.out.println("USER ID DESPUES DE SAVE: " + saved.id());
         String refreshHash = TokenHashing.sha256Hex(refresh);
 
         refreshStore.store(
-                saved.id(), // correcto
+                userId,
+                saved.tenantId(),
                 refreshHash,
                 now.plusSeconds(jwtProps.refreshTtlSeconds()),
                 userAgent,
@@ -101,7 +108,6 @@ public class AuthService implements AuthUseCase {
     }
 
     @Override
-    @Transactional
     public AuthResultDto login(String email, String password, String userAgent, String ipAddress) {
         String normalizedEmail = normalizeEmail(email);
 
@@ -125,7 +131,7 @@ public class AuthService implements AuthUseCase {
         String refresh = jwtTokenService.createRefreshToken(user);
 
         String refreshHash = TokenHashing.sha256Hex(refresh);
-        refreshStore.store(user.id(), refreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
+        refreshStore.store(user.id(), user.tenantId(), refreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
 
         return new AuthResultDto(access, refresh, toUserView(user));
     }
@@ -162,7 +168,7 @@ public class AuthService implements AuthUseCase {
         String newRefresh = jwtTokenService.createRefreshToken(user);
 
         String newRefreshHash = TokenHashing.sha256Hex(newRefresh);
-        refreshStore.store(user.id(), newRefreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
+        refreshStore.store(user.id(), user.tenantId(), newRefreshHash,  now.plusSeconds(jwtProps.refreshTtlSeconds()), userAgent, ipAddress);
 
         return new AuthResultDto(access, newRefresh, toUserView(user));
     }
@@ -276,6 +282,7 @@ public class AuthService implements AuthUseCase {
         // GUARDAR REFRESH TOKEN
         refreshStore.store(
                 user.id(),
+                user.tenantId(),
                 refreshHash,
                 now.plusSeconds(jwtProps.refreshTtlSeconds()),
                 null,

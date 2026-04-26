@@ -1,10 +1,7 @@
 package com.spiid.login.service.infrastructure.outbound.persistence.entity;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,5 +22,9 @@ public class UserRoleEntity {
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
+
+  @ManyToOne
+  @JoinColumn(name = "user_id", insertable = false, updatable = false)
+  private UserAccountEntity user;
 
 }

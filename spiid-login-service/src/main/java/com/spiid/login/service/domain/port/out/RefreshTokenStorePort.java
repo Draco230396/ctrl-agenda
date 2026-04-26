@@ -10,6 +10,7 @@ public interface RefreshTokenStorePort {
 
     void store(
             UUID userId,
+            UUID tenantId,
             String refreshTokenHash,
             Instant expiresAt,
             String userAgent,

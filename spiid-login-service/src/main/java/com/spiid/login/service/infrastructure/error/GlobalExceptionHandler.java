@@ -12,21 +12,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
-    return ResponseEntity.badRequest().body(Map.of(
-        "error", "validation_error",
-        "message", "Request inválido",
-        "ts", Instant.now().toString()
-    ));
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<?> badRequest(Exception ex) {
+    return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
   }
 
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-        "error", "bad_request",
-        "message", ex.getMessage(),
-        "ts", Instant.now().toString()
-    ));
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<?> conflict(Exception ex) {
+    return ResponseEntity.status(409).body(Map.of("error", ex.getMessage()));
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<?> generic(Exception ex) {
+    return ResponseEntity.status(500).body(Map.of("error", "Error interno"));
   }
 }

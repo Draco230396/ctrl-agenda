@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -23,8 +24,12 @@ public class RefreshTokenEntity {
   @Column(name = "id", nullable = false)
   private UUID id;
 
-  @Column(name = "user_id", nullable = false)
-  private UUID userId;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "user_id", nullable = false)
+  private UserAccountEntity user;
+
+  @Column(name = "tenant_id", nullable = false)
+  private UUID tenantId;
 
   @JdbcTypeCode(SqlTypes.CHAR)
   @Column(name = "token_hash", nullable = false, unique = true, length = 64)

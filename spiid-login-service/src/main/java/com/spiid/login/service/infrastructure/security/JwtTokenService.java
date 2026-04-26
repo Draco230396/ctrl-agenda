@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Emite y valida JWT para SPIID.
@@ -29,37 +30,66 @@ public class JwtTokenService {
   }
 
   public String createAccessToken(User user) {
+    if (user == null) {
+      throw new IllegalArgumentException("User requerido");
+    }
+
+    if (user.id() == null) {
+      throw new IllegalStateException("User.id es null (usuario no persistido)");
+    }
+
+    if (user.tenantId() == null) {
+      throw new IllegalStateException("User.tenantId es null");
+    }
+
     Instant now = Instant.now();
     Instant exp = now.plusSeconds(props.accessTtlSeconds());
 
-    List<String> roleKeys = user.roles() == null ? List.of()
-        : user.roles().stream().map(r -> r.key()).distinct().toList();
+    List<String> roleKeys = user.roles() == null
+            ? List.of()
+            : user.roles().stream()
+            .map(r -> r.key())
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
 
     return Jwts.builder()
-        .issuer(props.issuer())
-        .subject(user.id().toString())
-        .claim("typ", "access")
-        .claim("roles", roleKeys)
-        .claim("tenantId", user.tenantId().toString())
-        .issuedAt(Date.from(now))
-        .expiration(Date.from(exp))
-        .signWith(key, Jwts.SIG.HS256)
-        .compact();
+            .issuer(props.issuer())
+            .subject(String.valueOf(user.id()))
+            .claim("tenantId", String.valueOf(user.tenantId()))
+            .claim("typ", "access")
+            .claim("roles", roleKeys)
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(exp))
+            .signWith(key, Jwts.SIG.HS256)
+            .compact();
   }
 
   public String createRefreshToken(User user) {
+    if (user == null) {
+      throw new IllegalArgumentException("User requerido");
+    }
+
+    if (user.id() == null) {
+      throw new IllegalStateException("User.id es null (usuario no persistido)");
+    }
+
+    if (user.tenantId() == null) {
+      throw new IllegalStateException("User.tenantId es null");
+    }
+
     Instant now = Instant.now();
     Instant exp = now.plusSeconds(props.refreshTtlSeconds());
 
     return Jwts.builder()
-        .issuer(props.issuer())
-        .subject(user.id().toString())
-        .claim("typ", "refresh")
-        .claim("tenantId", user.tenantId().toString())
-        .issuedAt(Date.from(now))
-        .expiration(Date.from(exp))
-        .signWith(key, Jwts.SIG.HS256)
-        .compact();
+            .issuer(props.issuer())
+            .subject(String.valueOf(user.id()))
+            .claim("tenantId", String.valueOf(user.tenantId()))
+            .claim("typ", "refresh")
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(exp))
+            .signWith(key, Jwts.SIG.HS256)
+            .compact();
   }
 
   /**

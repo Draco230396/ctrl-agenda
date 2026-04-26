@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Adapter JPA -> Puerto de dominio.
@@ -50,16 +51,17 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   @Transactional
   public User save(User user) {
 
-    UserAccountEntity entity = users.findById(user.id())
-            .orElseGet(UserAccountEntity::new);
+    UserAccountEntity entity = new UserAccountEntity(); //Siempre nuevo
 
     mapToEntity(entity, user);
+    UserAccountEntity saved = users.save(entity);
 
-    users.save(entity);
+    // SE REALIZA UN FLUSH PARA REGISTRAR
+    users.flush();
 
-    saveRoles(entity.getId(), user.roles());
+    saveRoles(saved.getId(), user.roles());
 
-    return user;
+    return mapToDomain(saved);
   }
 
 
@@ -73,7 +75,7 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
 
     Instant now = Instant.now();
 
-    entity.setId(user.id());
+   // entity.setId(user.id());
     entity.setTenantId(user.tenantId());
     entity.setEmail(user.email());
     entity.setPasswordHash(user.passwordHash());
@@ -94,7 +96,8 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     if (roles == null || roles.isEmpty()) return;
 
     Instant now = Instant.now();
-
+    // Obtener el user
+    UserAccountEntity userEntity = users.getReferenceById(userId);
     for (RoleCatalogItem role : roles) {
 
       short code = role.code();
@@ -107,31 +110,37 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
       userRoles.save(
               new UserRoleEntity(
                       new UserRoleId(userId, code),
-                      now
+                      now,
+                      userEntity
               )
       );
     }
   }
   private User mapToDomain(UserAccountEntity entity) {
 
+    if (entity == null) {
+      throw new IllegalArgumentException("Entity no puede ser null");
+    }
+    if (entity.getId() == null) {
+      throw new IllegalStateException("UserAccountEntity.id es null (no persistido)");
+    }
+    // 1. Obtener códigos de roles
     List<Short> codes = userRoles.findRoleCodesByUserId(entity.getId());
-
-    if (codes.isEmpty()) {
+    // 2. Si no hay roles → devolver usuario sin roles
+    if (codes == null || codes.isEmpty()) {
       return buildUser(entity, Collections.emptySet());
     }
-
+    // 3. Traer catálogo (roles válidos)
     List<CatalogRoleEntity> catalog = catalogRoles.findAllById(codes);
-
-    Set<RoleCatalogItem> roles = new LinkedHashSet<>();
-
-    for (CatalogRoleEntity cr : catalog) {
-      roles.add(new RoleCatalogItem(
-              cr.getCode(),
-              cr.getKey(),
-              cr.getDescription()
-      ));
-    }
-
+    // 4. Mapear a dominio
+    Set<RoleCatalogItem> roles = catalog.stream()
+            .filter(Objects::nonNull)
+            .map(cr -> new RoleCatalogItem(
+                    cr.getCode(),
+                    cr.getKey(),
+                    cr.getDescription()
+            ))
+            .collect(Collectors.toCollection(LinkedHashSet::new)); // mantiene orden
     return buildUser(entity, roles);
   }
   private User buildUser(UserAccountEntity e, Set<RoleCatalogItem> roles) {
