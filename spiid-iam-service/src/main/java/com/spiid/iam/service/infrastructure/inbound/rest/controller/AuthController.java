@@ -1,0 +1,101 @@
+package com.spiid.iam.service.infrastructure.inbound.rest.controller;
+
+import com.spiid.iam.service.application.dto.*;
+import com.spiid.iam.service.application.dto.*;
+import com.spiid.iam.service.application.usecase.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Endpoints de autenticación.
+ *
+ * Flujo:
+ * - register: crea usuario + roles + emite tokens
+ * - login: valida credenciales y emite tokens
+ * - refresh: rota refresh token (revoca el anterior) y emite nuevo access/refresh
+ * - me: devuelve datos del usuario autenticado (por access token)
+ */
+@RestController
+@RequestMapping(value = "/api/v1/auth", produces = MediaType.APPLICATION_JSON_VALUE)
+public class AuthController {
+
+  private final AuthService auth;
+
+  public AuthController(AuthService auth) {
+    this.auth = auth;
+  }
+
+  @PostMapping("/register")
+  public AuthResponse register(@Valid @RequestBody RegisterRequest req, HttpServletRequest http) {
+    var res = auth.register(req.email(), req.password(), req.roleCodes(), userAgent(http), clientIp(http));
+    return toResponse(res);
+  }
+
+  @PostMapping("/login")
+  public AuthResponse login(@Valid @RequestBody LoginRequest req, HttpServletRequest http) {
+    var res = auth.login(req.email(), req.password(), userAgent(http), clientIp(http));
+    return toResponse(res);
+  }
+
+  @PostMapping("/refresh")
+  public AuthResponse refresh(@Valid @RequestBody RefreshRequest req, HttpServletRequest http) {
+    var res = auth.refresh(req.refreshToken(), userAgent(http), clientIp(http));
+    return toResponse(res);
+  }
+
+  @GetMapping("/me")
+  public UserView me(Authentication authentication) {
+    // JwtAuthFilter pone el principal como UUID
+    UUID userId = (UUID) authentication.getPrincipal();
+    var user = auth.me(userId);
+    return new UserView(
+        user.id().toString(),
+        user.email(),
+        user.enabled(),
+        user.roles().stream().map(r -> new RoleView(r.code(), r.key(), r.description())).toList()
+    );
+  }
+
+  private static AuthResponse toResponse(AuthResultDto res) {
+    var u = res.user();
+    List<RoleView> roles = u.roles().stream().map(r -> new RoleView(r.code(), r.key(), r.description())).toList();
+    var uv = new UserView(u.id().toString(), u.email(), u.enabled(), roles);
+    return new AuthResponse(res.accessToken(), res.refreshToken(), uv);
+  }
+
+  private static String userAgent(HttpServletRequest req) {
+    String ua = req.getHeader("User-Agent");
+    return ua == null ? null : ua.substring(0, Math.min(ua.length(), 255));
+  }
+
+  private static String clientIp(HttpServletRequest req) {
+    // Si estás detrás de proxy/load balancer, se usa X-Forwarded-For (primer IP).
+    String xff = req.getHeader("X-Forwarded-For");
+    if (xff != null && !xff.isBlank()) {
+      return xff.split(",")[0].trim();
+    }
+    String ip = req.getRemoteAddr();
+    return ip == null ? null : ip;
+  }
+
+  @PostMapping("/google")
+  public ResponseEntity<AuthResponse> loginWithGoogle(
+          @Valid @RequestBody GoogleLoginRequest request
+  ) {
+
+    var res = auth.loginWithGoogle(
+            request.idToken(),
+            request.role(),
+            request.tenantId()
+    );
+
+    return ResponseEntity.ok(toResponse(res));
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "info": {
+    "name": "Google Auth - Get ID Token",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Obtener ID Token de Google",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://accounts.google.com/o/oauth2/v2/auth",
+          "host": [
+            "accounts.google.com"
+          ],
+          "path": [
+            "o",
+            "oauth2",
+            "v2",
+            "auth"
+          ],
+          "query": [
+            {
+              "key": "client_id",
+              "value": "{{google_client_id}}"
+            },
+            {
+              "key": "redirect_uri",
+              "value": "https://oauth.pstmn.io/v1/callback"
+            },
+            {
+              "key": "response_type",
+              "value": "code"
+            },
+            {
+              "key": "scope",
+              "value": "openid email profile"
+            },
+            {
+              "key": "state",
+              "value": "12345"
+            }
+          ]
+        }
+      },
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "client_id",
+            "value": "{{google_client_id}}",
+            "type": "string"
+          },
+          {
+            "key": "client_secret",
+            "value": "{{google_client_secret}}",
+            "type": "string"
+          },
+          {
+            "key": "access_token_url",
+            "value": "https://oauth2.googleapis.com/token",
+            "type": "string"
+          },
+          {
+            "key": "auth_url",
+            "value": "https://accounts.google.com/o/oauth2/v2/auth",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid email profile",
+            "type": "string"
+          },
+          {
+            "key": "state",
+            "value": "12345",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "google_client_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "google_client_secret",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

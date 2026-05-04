@@ -22,7 +22,7 @@
 
     <!-- Lista de módulos (carpetas con sus poms hijos) -->
     <modules>
-        <module>spiid-login-service</module>
+        <module>spiid-iam-service</module>
     </modules>
 
     <properties>

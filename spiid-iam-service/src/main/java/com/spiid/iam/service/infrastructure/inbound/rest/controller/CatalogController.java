@@ -1,0 +1,33 @@
+package com.spiid.iam.service.infrastructure.inbound.rest.controller;
+
+import com.spiid.iam.service.application.dto.RoleView;
+import com.spiid.iam.service.domain.port.in.CatalogUseCase;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+/**
+ * Catálogos (lectura) para UI.
+ * Nota: en el futuro podrías mover catálogos a un microservicio propio, pero por ahora IAM está bien.
+ */
+@RestController
+@RequestMapping(value = "/api/v1/catalog", produces = MediaType.APPLICATION_JSON_VALUE)
+public class CatalogController {
+
+  private final CatalogUseCase catalog;
+
+  public CatalogController(CatalogUseCase catalog) {
+    this.catalog = catalog;
+  }
+
+  @GetMapping("/roles")
+  public List<RoleView> roles() {
+    return catalog.listRoles()
+        .stream()
+        .map(r -> new RoleView(r.code(), r.key(), r.description()))
+        .toList();
+  }
+}

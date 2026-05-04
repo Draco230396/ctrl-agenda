@@ -1,0 +1,20 @@
+package com.spiid.iam.service.domain.port.out;
+
+import com.spiid.iam.service.application.dto.TokenRecord;
+
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface RefreshTokenStorePort {
+
+    void store(
+            UUID userId,
+            UUID tenantId,
+            String refreshTokenHash,
+            Instant expiresAt,
+            String userAgent,
+            String ipAddress);
+    Optional<TokenRecord> read(String refreshTokenHash);
+    void revoke(String refreshTokenHash);
+}
