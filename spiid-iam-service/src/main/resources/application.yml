@@ -50,4 +50,4 @@ app:
       access-ttl-seconds: 900
       refresh-ttl-seconds: 2592000
 google:
-  client-id: TU_CLIENT_ID_REAL
+  client-id: "684505590953-8gmcn4gfgebbk4t0u3el02nd74i3nh4o.apps.googleusercontent.com"

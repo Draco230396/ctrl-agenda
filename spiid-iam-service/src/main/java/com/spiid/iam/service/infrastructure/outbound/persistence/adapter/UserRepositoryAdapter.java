@@ -51,7 +51,9 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   @Transactional
   public User save(User user) {
 
-    UserAccountEntity entity = new UserAccountEntity(); //Siempre nuevo
+    UserAccountEntity entity = user.id() != null
+            ? users.findById(user.id()).orElse(new UserAccountEntity())
+            : new UserAccountEntity();
 
     mapToEntity(entity, user);
     UserAccountEntity saved = users.save(entity);
@@ -67,8 +69,8 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
 
   @Override
   @Transactional(readOnly = true)
-  public Optional<User> findByProviderId(String providerId) {
-    return users.findByProviderId(providerId)
+  public Optional<User> findByProviderAndProviderId(String provider, String providerId) {
+    return users.findByProviderAndProviderId(provider, providerId)
             .map(this::mapToDomain);
   }
   private void mapToEntity(UserAccountEntity entity, User user) {
@@ -76,11 +78,14 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     Instant now = Instant.now();
 
    // entity.setId(user.id());
+    if (user.tenantId() == null) {
+      throw new IllegalArgumentException("tenantId no puede ser null");
+    }
     entity.setTenantId(user.tenantId());
     entity.setEmail(user.email());
     entity.setPasswordHash(user.passwordHash());
     entity.setEnabled(user.enabled());
-    entity.setProvider(user.provider());
+    entity.setProvider(user.provider().toUpperCase());
     entity.setProviderId(user.providerId());
 
     if (entity.getCreatedAt() == null) {
@@ -91,8 +96,9 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   }
   private void saveRoles(UUID userId, Set<RoleCatalogItem> roles) {
 
-    userRoles.deleteAllByUserId(userId);
-
+    if (roles != null && !roles.isEmpty()) {
+      userRoles.deleteAllByUserId(userId);
+    }
     if (roles == null || roles.isEmpty()) return;
 
     Instant now = Instant.now();
