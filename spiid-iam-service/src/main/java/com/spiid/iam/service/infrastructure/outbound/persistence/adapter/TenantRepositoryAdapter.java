@@ -6,6 +6,9 @@ import com.spiid.iam.service.infrastructure.outbound.persistence.entity.TenantEn
 import com.spiid.iam.service.infrastructure.outbound.persistence.repository.TenantJpaRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+import java.util.UUID;
+
 @Component
 public class TenantRepositoryAdapter implements TenantRepositoryPort {
 
@@ -24,12 +27,31 @@ public class TenantRepositoryAdapter implements TenantRepositoryPort {
     public Tenant save(Tenant tenant) {
 
         TenantEntity entity = new TenantEntity();
-        entity.setId(tenant.id());
+        //entity.setId(tenant.id());
         entity.setName(tenant.name());
         entity.setActive(tenant.active());
 
-        repo.save(entity);
+        TenantEntity saved = repo.save(entity);
+        //Devolver con id generado
+        return mapToDomain(saved);
+    }
 
-        return tenant;
+    /**
+     * @param tenantId
+     * @return
+     */
+    @Override
+    public Optional<Tenant> findById(UUID tenantId) {
+        return repo.findById(tenantId)
+                .map(this::mapToDomain);
+    }
+
+    private Tenant mapToDomain(TenantEntity entity) {
+
+        return new Tenant(
+                entity.getId(),
+                entity.getName(),
+                entity.isActive()
+        );
     }
 }

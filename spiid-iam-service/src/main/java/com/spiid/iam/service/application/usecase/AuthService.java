@@ -5,9 +5,7 @@ import com.spiid.iam.service.domain.port.out.GoogleTokenVerifierPort;
 import com.spiid.iam.service.domain.port.out.RefreshTokenStorePort;
 import com.spiid.iam.service.domain.port.out.TenantRepositoryPort;
 import com.spiid.iam.service.domain.port.out.UserRepositoryPort;
-import com.spiid.iam.service.application.dto.*;
 import com.spiid.iam.service.domain.port.in.AuthUseCase;
-import com.spiid.iam.service.domain.port.out.*;
 import com.spiid.iam.service.infrastructure.security.JwtTokenService;
 import com.spiid.iam.service.infrastructure.security.TokenHashing;
 import jakarta.persistence.EntityManager;
@@ -39,7 +37,7 @@ public class AuthService implements AuthUseCase {
     private final GoogleTokenVerifierPort googleTokenVerifierPort;
 
     private final CatalogService catalogService;
-    private final TenantRepositoryPort tenantRepositoryAdapter;
+    private final TenantRepositoryPort tenantRepositoryPort;
     @PersistenceContext
     private EntityManager entityManager;
     @Override
@@ -64,7 +62,7 @@ public class AuthService implements AuthUseCase {
         //1. Crear tenant (registro = nuevo negocio)
         String tenantName = normalizedEmail.split("@")[0] + "-tenant";
 
-        Tenant tenant = tenantRepositoryAdapter.save(
+        Tenant tenant = tenantRepositoryPort.save(
                 new Tenant(UUID.randomUUID(), tenantName, true)
         );
 
@@ -208,7 +206,7 @@ public class AuthService implements AuthUseCase {
         var googleUser = googleTokenVerifierPort.verify(idToken);
 
         // 2. BUSCAR USUARIO POR PROVIDER ID (GOOGLE)
-        var userOpt = users.findByProviderId(googleUser.sub());
+        var userOpt = users.findByProviderAndProviderId("GOOGLE", googleUser.sub());
 
         // 3. SI NO EXISTE, VALIDAR QUE EL EMAIL NO ESTÉ REGISTRADO CON OTRO MÉTODO
         if (userOpt.isEmpty()) {
@@ -246,18 +244,23 @@ public class AuthService implements AuthUseCase {
 
             if ("OWNER".equals(normalizedRole)) {
                 // OWNER crea su propio tenant
-                tenantId = UUID.randomUUID();
+                Tenant tenant = tenantRepositoryPort.save(
+                        new Tenant(null, "Default Tenant", true)
+                );
+                tenantId = tenant.id();
             } else {
                 if (tenantIdInput == null) {
                     throw new RuntimeException("tenantId required for role: " + normalizedRole);
                 }
-
                 tenantId = UUID.fromString(tenantIdInput);
+
+                tenantRepositoryPort.findById(tenantId)
+                        .orElseThrow(() -> new RuntimeException("Tenant no existe"));
             }
 
             // CREAR USUARIO
             user = new User(
-                    UUID.randomUUID(),
+                    null,
                     tenantId,
                     googleUser.email(),
                     null, // sin password (Google)

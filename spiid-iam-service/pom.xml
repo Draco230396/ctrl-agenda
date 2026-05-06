@@ -13,8 +13,8 @@
   </parent>
 
   <artifactId>spiid-iam-service</artifactId>
-  <name>spiid-login-service</name>
-  <description>spiid-login-service - SPIID microservice</description>
+  <name>spiid-iam-service</name>
+  <description>spiid-iam-service - SPIID microservice</description>
 
   <dependencies>
 
